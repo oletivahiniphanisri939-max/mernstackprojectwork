@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>College Announcements & Events</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+<style>
+body{
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #e0f2fe;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.two-column-list{
+    width: 95%;
+    max-width: 1100px;
+    background: #f8fafc;
+    border-radius: 20px;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+    padding: 25px;
+}
+
+.row{
+    display: flex;
+    gap: 20px;
+}
+
+.col{
+    width: 50%;
+}
+
+h2{
+    text-align: center;
+    color: #1e40af;
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.announcements, .events-section{
+    background: white;
+    border-radius: 18px;
+    padding: 20px;
+}
+
+.announcements li{
+    list-style: none;
+    padding: 15px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.meta{
+    font-size: 13px;
+    color: #64748b;
+}
+
+.events{
+    background: #ecfeff;
+    border-radius: 16px;
+    padding: 10px;
+}
+
+.events li{
+    list-style: none;
+    display: flex;
+    align-items: center;
+    padding: 18px;
+    border-bottom: 1px solid #dbeafe;
+}
+
+.events-date{
+    background: linear-gradient(135deg,#2563eb,#1e40af);
+    color: white;
+    width: 85px;
+    text-align: center;
+    border-radius: 14px;
+    padding: 10px 0;
+    font-weight: bold;
+}
+
+.events-date span{
+    display: block;
+    font-size: 26px;
+}
+
+@media(max-width:900px){
+    .row{
+        flex-direction: column;
+    }
+    .col{
+        width: 100%;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<script>
+if(localStorage.getItem("isLoggedIn") !== "true"){
+    alert("Please login first");
+    window.location.href = "login.html";
+}
+</script>
+
+<section class="two-column-list">
+<div class="row">
+
+<!-- Announcements -->
+<div class="col">
+<section class="announcements">
+<h2>Announcements</h2>
+<ul id="announcementList"></ul>
+</section>
+</div>
+
+<!-- Events -->
+<div class="col">
+<section class="events-section">
+<h2>Events</h2>
+<div class="events">
+<ul id="eventList"></ul>
+</div>
+</section>
+</div>
+
+</div>
+</section>
+
+<br><br>
+
+<center>
+<a href="homepage.html" style="text-decoration:none; background:#1e40af; color:white; padding:10px 20px; border-radius:8px;">
+⬅ Back to Home
+</a>
+</center>
+
+<script>
+
+const API = "http://localhost:5000/api/notices";
+
+// FETCH DATA
+fetch(API)
+.then(res => res.json())
+.then(data => {
+
+    const notices = data.notices;
+
+    let aList = document.getElementById("announcementList");
+    let eList = document.getElementById("eventList");
+
+    aList.innerHTML = "";
+    eList.innerHTML = "";
+
+    notices.forEach(item => {
+
+        let dateObj = new Date(item.date);
+
+        let fullDate = dateObj.toDateString();
+        let month = dateObj.toLocaleString('en-US', { month: 'short' });
+        let day = dateObj.getDate();
+
+        // ANNOUNCEMENTS
+        if(item.type === "announcement"){
+
+            let li = document.createElement("li");
+
+            li.innerHTML = `
+                <span class="meta">${fullDate}</span>
+                <h3>${item.title}</h3>
+                <p>${item.description}</p>
+            `;
+
+            aList.appendChild(li);
+        }
+
+        // EVENTS
+        else if(item.type === "event"){
+
+            let li = document.createElement("li");
+
+            li.innerHTML = `
+                <div class="events-date">
+                    ${month} <span>${day}</span>
+                </div>
+                <div style="padding-left:15px">
+                    <h3>${item.title}</h3>
+                    <p>${item.description}</p>
+                </div>
+            `;
+
+            eList.appendChild(li);
+        }
+
+    });
+
+})
+.catch(err => {
+    console.error(err);
+    alert("Failed to load notices ❌");
+});
+
+</script>
+
+</body>
+</html>

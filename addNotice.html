@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Manage Notices</title>
+
+<style>
+body {
+    font-family: 'Segoe UI';
+    background: linear-gradient(135deg,#e0f2fe,#eef2ff);
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    max-width: 900px;
+    margin: auto;
+}
+
+.card {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+h2 {
+    text-align: center;
+    color: #1e40af;
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+textarea {
+    height: 120px;
+    resize: none;
+}
+
+button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.save-btn {
+    background: #2563eb;
+    color: white;
+}
+
+.edit-btn {
+    background: orange;
+    color: white;
+}
+
+.delete-btn {
+    background: red;
+    color: white;
+}
+
+.notice {
+    background: #f8fafc;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="card">
+<h2>Manage Notices</h2>
+
+<select id="type">
+<option value="announcement">Announcement</option>
+<option value="event">Event</option>
+</select>
+
+<input id="title" placeholder="Title">
+<input id="date" type="date">
+<textarea id="desc" placeholder="Enter description"></textarea>
+
+<button class="save-btn" onclick="saveNotice()">Save</button>
+</div>
+
+<div class="card">
+<h3>All Notices</h3>
+<div id="noticeList"></div>
+</div>
+
+</div>
+
+<script>
+
+let editId = null;
+const API = "http://localhost:5000/api/notices"; // ✅ FIXED
+
+// LOAD
+function loadNotices(){
+
+    fetch(API)
+    .then(res => res.json())
+    .then(data => {
+
+        const list = document.getElementById("noticeList");
+        list.innerHTML = "";
+
+        const notices = data.notices; // ✅ IMPORTANT
+
+        notices.forEach(n => {
+
+            let date = new Date(n.date).toDateString();
+
+            list.innerHTML += `
+            <div class="notice">
+                <h4>${n.title}</h4>
+                <p>${n.description}</p>
+                <small>${n.type} | ${date}</small>
+
+                <div>
+                    <button class="edit-btn" onclick="editNotice('${n._id}','${n.type}','${n.title}','${n.description}','${n.date}')">Edit</button>
+                    <button class="delete-btn" onclick="deleteNotice('${n._id}')">Delete</button>
+                </div>
+            </div>
+            `;
+        });
+
+    });
+}
+
+
+// SAVE / UPDATE
+function saveNotice(){
+
+    const data = {
+        type: document.getElementById("type").value,
+        title: document.getElementById("title").value,
+        description: document.getElementById("desc").value,
+        date: document.getElementById("date").value
+    };
+
+    // UPDATE
+    if(editId){
+        fetch(`${API}/${editId}`, {
+            method: "PUT",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(data)
+        })
+        .then(() => {
+            alert("Updated ✅");
+            resetForm();
+            loadNotices();
+        });
+    }
+
+    // ADD
+    else{
+        fetch(API, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(data)
+        })
+        .then(() => {
+            alert("Added ✅");
+            resetForm();
+            loadNotices();
+        });
+    }
+}
+
+
+// EDIT
+function editNotice(id,typeVal,titleVal,descVal,dateVal){
+
+    editId = id;
+
+    document.getElementById("type").value = typeVal;
+    document.getElementById("title").value = titleVal;
+    document.getElementById("desc").value = descVal;
+    document.getElementById("date").value = dateVal.split("T")[0]; // ✅ FIX
+}
+
+
+// DELETE
+function deleteNotice(id){
+
+    if(!confirm("Delete this notice?")) return;
+
+    fetch(`${API}/${id}`, {
+        method: "DELETE"
+    })
+    .then(() => {
+        alert("Deleted ❌");
+        loadNotices();
+    });
+}
+
+
+// RESET
+function resetForm(){
+    editId = null;
+    document.getElementById("title").value = "";
+    document.getElementById("desc").value = "";
+    document.getElementById("date").value = "";
+}
+
+
+// INIT
+loadNotices();
+
+</script>
+
+</body>
+</html>

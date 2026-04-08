@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Attendance</title>
+
+<style>
+body{
+margin:0;
+font-family:Arial;
+}
+
+.image-container{
+position:relative;
+width:100%;
+height:100vh;
+}
+
+.image-container img{
+width:100%;
+height:100%;
+object-fit:cover;
+}
+
+.attendance-box{
+position:absolute;
+top:80px;
+left:30px;
+width:600px;
+background:white;
+padding:20px;
+border-radius:20px;
+box-shadow:0 0 20px rgba(0,0,0,0.3);
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+text-align:center;
+}
+
+th,td{
+border:1px solid #444;
+padding:10px;
+}
+
+th{
+background:#2c3e50;
+color:white;
+}
+
+h2{
+text-align:center;
+}
+</style>
+</head>
+
+<body>
+
+<div class="image-container">
+
+<img src="attendancebackground.jpeg">
+
+<div class="attendance-box">
+
+<h2>Attendance Details</h2>
+
+<table>
+
+<thead>
+<tr>
+<th>Subject</th>
+<th>Total</th>
+<th>Present</th>
+<th>%</th>
+</tr>
+</thead>
+
+<tbody id="attendanceBody"></tbody>
+
+</table>
+
+</div>
+</div>
+
+<script>
+
+
+async function loadAttendance(){
+
+try{
+
+let studentId = localStorage.getItem("studentId");
+
+if(!studentId){
+alert("Please login first ❌");
+window.location.href = "login.html";
+return;
+}
+
+let res = await fetch("http://localhost:5000/api/profile/" + studentId);
+let data = await res.json();
+
+console.log("API:", data);
+
+const student = data.student || data; // 🔥 FIX
+
+let tableBody = document.getElementById("attendanceBody");
+tableBody.innerHTML = "";
+
+// ❌ empty case
+if(!student.attendance || student.attendance.length === 0){
+tableBody.innerHTML = "<tr><td colspan='4'>No Attendance Data</td></tr>";
+return;
+}
+
+// ✅ loop
+student.attendance.forEach(sub => {
+
+let percent = 0;
+
+if(sub.total > 0){
+percent = ((sub.present / sub.total) * 100).toFixed(1);
+}
+
+let color = percent >= 75 ? "green" : "red";
+
+let row = `
+<tr>
+<td>${sub.subject}</td>
+<td>${sub.total}</td>
+<td>${sub.present}</td>
+<td style="color:${color}; font-weight:bold">${percent}%</td>
+</tr>
+`;
+
+tableBody.innerHTML += row;
+
+});
+
+}catch(err){
+console.error(err);
+alert("Failed to load attendance ❌");
+}
+
+}
+
+loadAttendance();
+</script>
+
+
+
+</body>
+</html>

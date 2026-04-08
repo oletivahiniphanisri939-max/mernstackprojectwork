@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Login Page</title>
+
+<style>
+body {
+  background-image: url("fgfghjkl.jpeg");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  height: 100vh;
+  margin: 0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.container {
+  display: flex;
+  gap: 90px;
+  margin-right: 80px;
+}
+
+.login-box {
+  text-align: right;
+}
+
+label {
+  display: block;
+  text-align: right;
+  font-size: 18px;
+  font-weight: bold;
+  padding-right: 190px;
+}
+
+h1{
+  text-align: right;
+  margin-right: 80px;
+}
+
+button {
+  margin-right: 130px;
+  padding: 8px 20px;
+  cursor: pointer;
+}
+
+a {
+  font-size: 16px;
+}
+
+input{
+  width: 280px;
+  height:40px;
+  font-size: 16px;
+  text-align: center;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<!-- Student Login -->
+<div class="login-box">
+    <h1>Student Login</h1>
+
+    <label>Email</label>
+    <input type="email" id="email" placeholder="Enter Email"><br><br>
+
+    <label>Password</label>
+    <input type="password" id="password" placeholder="Enter password"><br><br>
+
+    <a href="#">Forgot Password?</a><br><br>
+
+    <button type="button" onclick="studentLogin()">Login</button>
+</div>
+
+<!-- Admin Login -->
+<div class="login-box">
+    <h1>Admin Login</h1>
+
+    <label>Username</label>
+    <input type="text" id="adminUsername" placeholder="Enter admin username"><br><br>
+
+    <label>Password</label>
+    <input type="password" id="adminPassword" placeholder="Enter password"><br><br>
+
+    <a href="#">Forgot Password?</a><br><br>
+
+    <button type="button" onclick="adminLogin()">Login</button>
+</div>
+
+</div>
+
+<script>
+
+// ================= STUDENT LOGIN =================
+function studentLogin() {
+
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
+
+    if(!email || !password){
+        alert("Please fill all fields");
+        return;
+    }
+
+    // ✅ FIXED URL
+    fetch("http://localhost:5000/api/students/login", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            email,
+            password
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        console.log("Student Login Response:", data);
+
+        if(data.success){
+
+            alert("Login Successful ✅");
+
+            localStorage.setItem("isLoggedIn", "true");
+            localStorage.setItem("studentId", data.student._id);
+            localStorage.setItem("studentEmail", data.student.email);
+
+            window.location.href = "homepage.html";
+
+        } else {
+            alert(data.message || "Login Failed ❌");
+        }
+
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        alert("Server Error ❌");
+    });
+}
+
+
+// ================= ADMIN LOGIN =================
+function adminLogin() {
+
+    const username = document.getElementById("adminUsername").value.trim();
+    const password = document.getElementById("adminPassword").value.trim();
+
+    if(!username || !password){
+        alert("Please fill all fields");
+        return;
+    }
+
+    fetch("http://localhost:5000/api/admin/login", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            username,
+            password
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        console.log("Admin Login Response:", data);
+
+        if(data.success){
+
+            alert("Admin Login Successful ✅");
+
+            localStorage.setItem("adminLoggedIn", "true");
+
+            window.location.href = "admindashboard.html";
+
+        } else {
+            alert(data.message || "Login Failed ❌");
+        }
+
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        alert("Server Error ❌");
+    });
+}
+
+</script>
+
+</body>
+</html>

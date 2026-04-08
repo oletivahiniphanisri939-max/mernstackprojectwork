@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Student Messages</title>
+
+<style>
+body {
+    font-family: Arial;
+    background: #f4f6f9;
+    padding: 20px;
+}
+
+h2 {
+    text-align: center;
+}
+
+.filter-box {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+input, button {
+    padding: 8px;
+    margin: 5px;
+}
+
+button {
+    background: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #0056b3;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+th, td {
+    padding: 10px;
+    border: 1px solid #ccc;
+    text-align: center;
+}
+
+th {
+    background: #007bff;
+    color: white;
+}
+</style>
+
+</head>
+
+<body>
+
+<h2>Student Messages</h2>
+
+<div class="filter-box">
+    <input type="date" id="dateFilter">
+    <button onclick="filterByDate()">Filter</button>
+    <button onclick="resetFilter()">Reset</button>
+</div>
+
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Email</th>
+<th>Message</th>
+<th>Date & Time</th>
+</tr>
+</thead>
+
+<tbody id="msgTable"></tbody>
+
+</table>
+
+<script>
+
+let allMessages = [];
+const API = "http://localhost:5000/api/contact"; // ✅ clean
+
+// 🔥 LOAD DATA
+function loadMessages(){
+
+    fetch(API)
+    .then(res => res.json())
+    .then(data => {
+
+        // ✅ FIX: handle both formats
+        if(data.messages){
+            allMessages = data.messages;
+        } else {
+            allMessages = data;
+        }
+
+        displayMessages(allMessages);
+    })
+    .catch(err => {
+        console.error(err);
+        alert("Failed to load messages ❌");
+    });
+}
+
+
+// 🔥 DISPLAY FUNCTION
+function displayMessages(data){
+
+    const table = document.getElementById("msgTable");
+    table.innerHTML = "";
+
+    if(data.length === 0){
+        table.innerHTML = "<tr><td colspan='4'>No Messages Found</td></tr>";
+        return;
+    }
+
+    data.forEach(msg => {
+
+        let date = msg.createdAt 
+            ? new Date(msg.createdAt).toLocaleString()
+            : "No Date";
+
+        table.innerHTML += `
+        <tr>
+            <td>${msg.name || "-"}</td>
+            <td>${msg.email || "-"}</td>
+            <td>${msg.message || "-"}</td>
+            <td>${date}</td>
+        </tr>
+        `;
+    });
+}
+
+
+// 🔥 FILTER BY DATE
+function filterByDate(){
+
+    const selectedDate = document.getElementById("dateFilter").value;
+
+    if(!selectedDate){
+        alert("Please select a date");
+        return;
+    }
+
+    const filtered = allMessages.filter(msg => {
+
+        if(!msg.createdAt) return false;
+
+        const msgDate = new Date(msg.createdAt)
+            .toISOString()
+            .split("T")[0];
+
+        return msgDate === selectedDate;
+    });
+
+    displayMessages(filtered);
+}
+
+
+// 🔥 RESET
+function resetFilter(){
+    document.getElementById("dateFilter").value = "";
+    displayMessages(allMessages);
+}
+
+
+// INIT
+loadMessages();
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Student Dashboard | CampusPulse</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+}
+
+/* Sidebar */
+.sidebar {
+    height: 100vh;
+    width: 220px;
+    background-color: #2c3e50;
+    position: fixed;
+    top: 0;
+    left: 0;
+    padding-top: 20px;
+}
+
+.sidebar h2 {
+    color: white;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.sidebar a {
+    display: block;
+    color: white;
+    padding: 15px;
+    text-decoration: none;
+    font-size: 18px;
+}
+
+.sidebar a:hover {
+    background-color: #34495e;
+}
+
+/* Main content */
+.main-content {
+    margin-left: 220px;
+    padding: 20px;
+}
+
+.image-container {
+    position: relative;
+    width: 100%;
+    max-width: 1200px;
+}
+
+.image-container img {
+    width: 100%;
+}
+
+/* Info Boxes */
+.box {
+    position: absolute;
+    background: white;
+    padding: 20px;
+    width: 200px;
+    height: 100px;
+    font-size: 18px;
+    text-align: center;
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(44, 62, 80, 0.4);
+}
+</style>
+</head>
+
+<body>
+
+<script>
+if(localStorage.getItem("isLoggedIn") !== "true"){
+    alert("Please login first");
+    window.location.href = "login.html";
+}
+</script>
+
+<div class="sidebar">
+    <h2>CampusPulse</h2>
+    <a href="homepage.html">Home</a>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="attendance.html">Attendance</a>
+    <a href="notices.html">Notices</a>
+    <a href="contact.html">Contact</a>
+    <a href="profile.html">Profile</a>
+    <a href="#" onclick="logout()">Logout</a>
+</div>
+
+<div class="main-content">
+
+<h1>Welcome to CampusPulse Student Dashboard</h1>
+
+<div class="image-container">
+    <img src="dashboard.jpeg" alt="Dashboard Image">
+
+    <div class="box" style="top:10%; left:10%;">
+        Attendance
+        <p id="attendance">Loading...</p>
+    </div>
+
+    <div class="box" style="top:10%; left:40%;">
+        Subjects
+        <p id="subjects">Loading...</p>
+    </div>
+
+    <div class="box" style="top:40%; left:10%;">
+        Notices
+        <p id="notices">Loading...</p>
+    </div>
+
+    <div class="box" style="top:40%; left:40%;">
+        Exams
+        <p id="exams">Loading...</p>
+    </div>
+</div>
+
+</div>
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function(){
+
+    const studentId = localStorage.getItem("studentId");
+
+    console.log("Student ID:", studentId);
+
+    if(!studentId){
+        alert("Please login again ❌");
+        window.location.href = "login.html";
+        return;
+    }
+
+    fetch("http://localhost:5000/api/profile/" + studentId)
+    .then(res => res.json())
+    .then(data => {
+
+        console.log("API Data:", data);
+
+        const student = data.student || data; // 🔥 FIX
+
+        // ✅ Attendance %
+        let total = 0;
+        let present = 0;
+
+        if(student.attendance){
+            student.attendance.forEach(sub => {
+                total += sub.total || 0;
+                present += sub.present || 0;
+            });
+        }
+
+        let percent = total > 0 ? ((present/total)*100).toFixed(1) : 0;
+
+        document.getElementById("attendance").innerText = percent + "%";
+
+        // ✅ Subjects
+        document.getElementById("subjects").innerText =
+            student.subjects ?? "0";
+
+        // ✅ Notices
+        document.getElementById("notices").innerText =
+            student.notices ?? "0";
+
+        // ✅ Exams
+        document.getElementById("exams").innerText =
+            student.exams ?? "0";
+
+    })
+    .catch(err => {
+        console.error(err);
+        alert("Dashboard load failed ❌");
+    });
+
+});
+
+function logout(){
+    localStorage.clear();
+    window.location.href = "login.html";
+}
+</script>
+
+       
+
+
+</body>
+</html>

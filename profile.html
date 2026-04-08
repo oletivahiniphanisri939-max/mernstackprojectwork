@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Student Profile</title>
+
+<style>
+body{
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #4fa3b8, #5fb38e);
+}
+
+.box{
+    position: absolute;
+    background: white;
+    padding: 20px;
+    font-size: 16px;
+    border-radius: 12px;
+    box-shadow: 0 0 25px rgba(44, 62, 80, 0.6);
+}
+
+.avatar{
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 15px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid #2c3e50;
+}
+
+.avatar img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+h3{
+    margin-top: 0;
+    text-align: center;
+}
+
+table{
+    width: 100%;
+    border-collapse: collapse;
+}
+
+td{
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+td:first-child{
+    font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<h1 style="text-align: center; margin-top: 40px; color:white;">
+    Student Profile
+</h1>
+
+<!-- LEFT BOX -->
+<div class="box" style="top:20%; left:2%; width:400px; height:330px; text-align:center;">
+    
+    <div class="avatar">
+        <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png">
+    </div>
+
+    <h3 id="studentName">Loading...</h3>
+
+    <p><strong>Student ID:</strong> <span id="studentId"></span></p>
+    <p><strong>Course:</strong> <span>B.Tech</span></p>
+    <p><strong>Section:</strong> <span>5</span></p>
+
+</div>
+
+<!-- RIGHT BOX -->
+<div class="box" style="top:20%; left:33%; width:900px; height:350px;">
+    <h3>General Information</h3>
+    <table>
+        <tr><td>Academic Year</td><td id="year"></td></tr>
+        <tr><td>Department</td><td id="department"></td></tr>
+        <tr><td>Email</td><td id="email"></td></tr>
+        <tr><td>Gender</td><td id="gender"></td></tr>
+        <tr><td>Phone</td><td id="phone"></td></tr>
+        <tr><td>Total Attendance</td><td id="attendancePercent"></td></tr>
+    </table>
+</div>
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const studentId = localStorage.getItem("studentId");
+
+    if (!studentId) {
+        alert("Please login first");
+        window.location.href = "login.html";
+        return;
+    }
+
+    fetch("http://localhost:5000/api/profile/" + studentId)
+    .then(res => res.json())
+    .then(data => {
+
+        console.log("API:", data);
+
+        const student = data.student || data; // 🔥 FIX
+
+        document.getElementById("studentName").innerText = student.name || "N/A";
+        document.getElementById("studentId").innerText = student._id || "N/A";
+        document.getElementById("year").innerText = student.year || "N/A";
+        document.getElementById("department").innerText = student.department || "N/A";
+        document.getElementById("email").innerText = student.email || "N/A";
+        document.getElementById("gender").innerText = student.gender || "Not Available";
+        document.getElementById("phone").innerText = student.phone || "Not Available";
+
+        // ✅ Attendance %
+        let total = 0;
+        let present = 0;
+
+        if(student.attendance){
+            student.attendance.forEach(sub => {
+                total += sub.total || 0;
+                present += sub.present || 0;
+            });
+        }
+
+        let percent = total > 0 ? ((present/total)*100).toFixed(1) : 0;
+
+        document.getElementById("attendancePercent").innerText = percent + "%";
+
+    })
+    .catch(err => {
+        console.error(err);
+        alert("Profile load failed ❌");
+    });
+
+});
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Mark Attendance</title>
+
+<style>
+body {
+    font-family: 'Segoe UI', Arial;
+    margin: 0;
+    background: linear-gradient(135deg, #e3f2fd, #f1f8ff);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.container {
+    width: 450px;
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+h2 {
+    text-align: center;
+    color: #1e3a8a;
+}
+
+.student-info {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+select, input {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    background: #42a5f5;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #1e88e5;
+}
+
+button:disabled {
+    background: gray;
+    cursor: not-allowed;
+}
+
+.class-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 5px;
+}
+
+.class-row select {
+    width: 60%;
+}
+
+.message {
+    text-align: center;
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+.error {
+    color: red;
+}
+
+.success {
+    color: green;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Mark Attendance</h2>
+
+<div class="student-info">
+    <div id="studentName">Loading...</div>
+</div>
+
+<label>Subject</label>
+<select id="subject"></select>
+
+<label>No. of Classes Today</label>
+<input type="number" id="classCount" placeholder="Enter classes">
+
+<button id="generateBtn" onclick="generateRows()">Generate</button>
+
+<div id="classContainer"></div>
+
+<button id="submitBtn" onclick="submitAttendance()">Submit</button>
+
+<div id="msg" class="message"></div>
+
+</div>
+
+<script>
+
+// ================= GET STUDENT ID FROM URL =================
+const urlParams = new URLSearchParams(window.location.search);
+const studentId = urlParams.get("id");
+
+if(!studentId){
+    alert("Student ID missing ❌");
+}
+
+let studentData = null;
+
+
+// ================= LOAD STUDENT =================
+fetch(`http://localhost:5000/api/profile/${studentId}`)
+.then(res => res.json())
+.then(data => {
+
+    const student = data.student || data;
+    studentData = student;
+
+    document.getElementById("studentName").innerText =
+        "Student: " + (student.name || "N/A");
+
+    const subjectDropdown = document.getElementById("subject");
+    subjectDropdown.innerHTML = "";
+
+    if(student.attendance && student.attendance.length > 0){
+        student.attendance.forEach(sub => {
+            let option = document.createElement("option");
+            option.value = sub.subject;
+            option.text = sub.subject;
+            subjectDropdown.appendChild(option);
+        });
+    } else {
+        subjectDropdown.innerHTML = "<option>No Subjects</option>";
+    }
+
+    checkAlreadyMarked();
+
+})
+.catch(err => {
+    console.error(err);
+    alert("Failed to load student ❌");
+});
+
+
+// ================= CHECK =================
+function checkAlreadyMarked(){
+
+    if(!studentData) return;
+
+    const subject = document.getElementById("subject").value;
+    const today = new Date().toISOString().split("T")[0];
+    const msg = document.getElementById("msg");
+
+    const sub = studentData.attendance?.find(s => s.subject === subject);
+
+    if(sub && sub.lastAttendanceDate === today){
+        msg.innerText = "⚠️ Already marked today!";
+        msg.className = "message error";
+
+        generateBtn.disabled = true;
+        submitBtn.disabled = true;
+    } else {
+        generateBtn.disabled = false;
+        submitBtn.disabled = false;
+    }
+}
+
+
+// ================= SUBJECT CHANGE =================
+document.getElementById("subject").addEventListener("change", () => {
+    classContainer.innerHTML = "";
+    msg.innerText = "";
+    checkAlreadyMarked();
+});
+
+
+// ================= GENERATE =================
+function generateRows(){
+
+    const subject = document.getElementById("subject").value;
+    const sub = studentData.attendance?.find(s => s.subject === subject);
+    const today = new Date().toISOString().split("T")[0];
+    const msg = document.getElementById("msg");
+
+    if(sub && sub.lastAttendanceDate === today){
+        msg.innerText = "❌ Already marked today!";
+        msg.className = "message error";
+        return;
+    }
+
+    const count = document.getElementById("classCount").value;
+    const container = document.getElementById("classContainer");
+
+    container.innerHTML = "";
+
+    for(let i = 1; i <= count; i++){
+        container.innerHTML += `
+            <div class="class-row">
+                <span>Class ${i}</span>
+                <select class="status">
+                    <option value="present">Present</option>
+                    <option value="absent">Absent</option>
+                </select>
+            </div>
+        `;
+    }
+
+    msg.innerText = "";
+}
+
+
+// ================= SUBMIT =================
+function submitAttendance(){
+
+    const subject = document.getElementById("subject").value;
+    const statuses = document.querySelectorAll(".status");
+    const msg = document.getElementById("msg");
+
+    if(statuses.length === 0){
+        msg.innerText = "⚠️ Generate classes first!";
+        msg.className = "message error";
+        return;
+    }
+
+    let presentCount = 0;
+
+    statuses.forEach(s => {
+        if(s.value === "present") presentCount++;
+    });
+
+    const totalClasses = statuses.length;
+
+    fetch(`http://localhost:5000/api/admin/mark-attendance/${studentId}`, {
+        method: "PUT",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            subject,
+            totalClasses,
+            presentCount
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        if(data.success){
+
+            msg.innerText = "✅ Attendance saved!";
+            msg.className = "message success";
+
+            const today = new Date().toISOString().split("T")[0];
+            const sub = studentData.attendance.find(s => s.subject === subject);
+
+            if(sub){
+                sub.lastAttendanceDate = today;
+            }
+
+            generateBtn.disabled = true;
+            submitBtn.disabled = true;
+
+        } else {
+            msg.innerText = data.message;
+            msg.className = "message error";
+        }
+
+    });
+
+}
+
+</script>
+
+</body>
+</html>
